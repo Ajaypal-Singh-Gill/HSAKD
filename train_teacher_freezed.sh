@@ -25,13 +25,13 @@ python train_teacher_cifar.py \
     --pretrained-backbone ./pretrained_backbones/ResNet50.pth \
     --freezed
 
-python train_teacher_cifar.py \
+python3.9 train_teacher_cifar.py \
     --arch vgg13_bn_aux \
     --milestones 30 60 90 --epochs 100 \
     --checkpoint-dir ./checkpoint \
     --data ./data  \
-    --gpu 2 --manual 0 \
-    --pretrained-backbone ./pretrained_backbones/vgg13_bn.pth \
+    --gpu 0 --manual 0 \
+    --pretrained_backbone ./pretrained_backbones/vgg13_bn.pth \
     --freezed
 
 python train_teacher_cifar.py \
