@@ -21,6 +21,7 @@ import time
 import math
 from JPEG_layer import *
 
+print("Starting python....")
 
 # Define the custom module
 class CustomModel(nn.Module):
@@ -62,6 +63,7 @@ parser.add_argument('--checkpoint-dir', default='./checkpoint', type=str, help='
 
 # JPEG layer is added
 parser.add_argument('--lr_decay_epochs', type=str, default=[150,180,210], help='where to decay lr, can be a list')
+parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='decay rate for learning rate')
 
 parser.add_argument('--JPEG_enable', action='store_true')
 parser.add_argument('--JPEG_alpha_trainable', action='store_true')
@@ -76,6 +78,7 @@ parser.add_argument('--max_Q_Step', type=float, default=255, help='Maximum Quant
 parser.add_argument('--num_non_zero_q', type=int, default=5, choices=range(2,2**10 - 1), help='Window size for the reconstruction space')
 parser.add_argument('--log_file', type=str, default='_alpha_untrainable', help='add text to the file', choices=['', '_alpha_per_q', '_alpha_per_channel', '_alpha_untrainable'])
 parser.add_argument('--process_id', type=int, default=1, help='process id')
+parser.add_argument('--trial', type=int, default=1, help='no of trail')
 
 
 # global hyperparameter set
@@ -86,13 +89,13 @@ log_txt = 'result/'+ str(os.path.basename(__file__).split('.')[0]) + '_'+\
           'tarch' + '_' +  args.tarch + '_'+\
           'arch' + '_' +  args.arch + '_'+\
           'dataset' + '_' +  args.dataset + '_'+\
-          'seed'+ str(args.manual_seed) +'.txt'
+          'seed'+ str(args.manual_seed) + str(args.trial) +'.txt'
 
 log_dir = str(os.path.basename(__file__).split('.')[0]) + '_'+\
           'tarch' + '_' +  args.tarch + '_'+\
           'arch'+ '_' + args.arch + '_'+\
           'dataset' + '_' +  args.dataset + '_'+\
-          'seed'+ str(args.manual_seed)
+          'seed'+ str(args.manual_seed) + str(args.trial)
 
 args.checkpoint_dir = os.path.join(args.checkpoint_dir, log_dir)
 if not os.path.isdir(args.checkpoint_dir):
@@ -237,15 +240,13 @@ def adjust_lr(optimizer, epoch, args, step=0, all_iters_per_epoch=0):
     steps = np.sum(epoch > np.asarray(args.lr_decay_epochs))
     if steps > 0:
         new_lr_JPEG = args.JPEG_learning_rate * (args.lr_decay_rate ** steps)
-        param_group[0]['lr'] = cur_lr
-        param_group[1]['lr'] = new_lr_JPEG
-        param_group[2]['lr'] = new_lr_JPEG
+        optimizer.param_groups[0]['lr'] = cur_lr
+        optimizer.param_groups[1]['lr'] = new_lr_JPEG
+        optimizer.param_groups[2]['lr'] = new_lr_JPEG
         if args.JPEG_alpha_trainable: 
             alpha_learning_rate = args.alpha_learning_rate * (args.lr_decay_rate ** steps)
-            param_group[2]['lr'] = alpha_learning_rate
+            optimizer.param_groups[2]['lr'] = alpha_learning_rate
 
-    # for param_group in optimizer.param_groups:
-    #     param_group['lr'] = cur_lr
     return cur_lr
 
 
@@ -426,6 +427,8 @@ def test(epoch, criterion_cls, net):
 
 
 if __name__ == '__main__':
+    print("Starting main....", flush=True)
+
     best_acc = 0.  # best test accuracy
     start_epoch = 0  # start from epoch 0 or last checkpoint epoch
     criterion_cls = nn.CrossEntropyLoss()
